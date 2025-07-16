@@ -7,10 +7,8 @@ from sqlalchemy.orm import Session
 
 engine = create_engine('mysql+mysqldb://root:password@localhost:3306/bank')
 with Session(engine) as session:
-    account_service = AccountService(session)
-    account_service.withdraw(10, 10.0)
-    account_service.deposit(1, 10.0)
-    account_service.withdraw(1, 20.0)
+    customer_service = CustomerService(session)
+    customer = customer_service.create_customer()
     session.commit()
 
 

@@ -1,6 +1,10 @@
-from sqlalchemy import Table, MetaData, String, Double, ForeignKey, create_engine, select, insert
+from collections import namedtuple
+import datetime
+from sqlalchemy import Table, MetaData, String, Double, ForeignKey, DateTime, Column, create_engine, select, insert
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import List
+
+CustomerDetails = namedtuple('CustomerDetails', 'first_name last_name address')
 
 class Base(DeclarativeBase):
     pass
@@ -47,6 +51,14 @@ class Transaction(Base):
     transaction_id: Mapped[int] = mapped_column(primary_key=True)
     amount: Mapped[float] = mapped_column(Double())
     transaction_type: Mapped[str] = mapped_column(String(30))
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
     account_id: Mapped[int] = mapped_column(ForeignKey('account.account_id'))
     account: Mapped["Account"] = relationship(back_populates="transactions")
+
+    def __repr__(self) -> str:
+        if (self.transaction_type == "DEPOSIT"):
+            return f"{self.transaction_type} {self.created_at}: transaction_id={self.transaction_id}, amount=${self.amount}"
+        else:
+            return f"{self.transaction_type} {self.created_at}: transaction_id={self.transaction_id}, amount=-${self.amount}"
+
