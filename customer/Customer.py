@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from persistance.Models import Account, CustomerDetails
+from persistance.Models import Account
 from persistance.Models import Customer
 from account.Account import AccountService
 from collections import namedtuple
+from services.Cli import CustomerDetails
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('CustomerService')
@@ -12,6 +13,17 @@ class CustomerService:
     def __init__(self, session: Session):
         self.session = session
         self.account_service = AccountService(session)
+
+    def create_customer(self, customer_details: CustomerDetails) -> int:
+        customer = Customer(
+            first_name = customer_details.first_name,
+            last_name = customer_details.last_name,
+            address = customer_details.address
+        )
+        self.session.add(customer)
+        self.session.flush()
+        logger.info(f"CREATE_CUSTOMER_SUCCESS customer_id={customer.customer_id}")
+        return customer.customer_id
 
     def add_account(self, customer_id: int, initial_balance: float = 0.0):
         account = self.account_service.create_account(customer_id, initial_balance)

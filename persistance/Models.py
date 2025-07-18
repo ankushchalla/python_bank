@@ -4,8 +4,6 @@ from sqlalchemy import Table, MetaData, String, Double, ForeignKey, DateTime, Co
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from typing import List
 
-CustomerDetails = namedtuple('CustomerDetails', 'first_name last_name address')
-
 class Base(DeclarativeBase):
     pass
 

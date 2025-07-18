@@ -2,7 +2,6 @@ from sqlalchemy import  insert, create_engine, text, select
 from sqlalchemy.orm import Session
 from persistance.Models import Account
 from transaction.Transaction import TransactionService
-from persistance.DbUtils import DbUtils
 from typing import List
 from functools import reduce
 import logging
