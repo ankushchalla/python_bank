@@ -16,6 +16,7 @@ class AccountService:
     def create_account(self, customer_id: int, initial_balance: float = 0.0) -> Account:
         account = Account(customer_id=customer_id, balance=initial_balance)
         self.session.add(account)
+        self.session.flush()
         return account
     
     def withdraw(self, account_id: int, transaction_amount: float):

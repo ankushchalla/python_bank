@@ -1,7 +1,7 @@
 from customer.Customer import CustomerService
 from account.Account import AccountService
 import services.Cli as Cli
-from services.Cli import CustomerDetails
+from functools import reduce
 import logging
 logger = logging.getLogger('Session')
 
@@ -14,7 +14,6 @@ class CreateCustomerAction:
         customer_details = Cli.get_customer_details_from_input()
         generated_id = self.customer_service.create_customer(customer_details)
         print(f"Your customer_id is {generated_id}. You will need this for future logins")
-
 
     @classmethod
     def render_menu_item(cls):
@@ -36,6 +35,26 @@ class ViewTransactionHistoryAction:
     def render_menu_item(cls):
         print(f"({cls.id}): View transaction history")
 
+class CreateAccountAction:
+    id = 3
+    def __init__(self, customer_service: CustomerService, account_service: AccountService):
+        self.customer_service = customer_service
+        self.account_service = account_service
+
+    def perform(self):
+        customer_id = Cli.get_customer_id_from_input()
+        customer_exists = self.customer_service.customer_exists(customer_id)
+        if customer_exists:
+            account_details = Cli.get_account_details_from_input()
+            account = self.account_service.create_account(customer_id, initial_balance=account_details.initial_balance)
+            print(f"Created account: {account}")
+        else:
+            print(f"Could not find customer with customer_id {customer_id}, quitting...")
+
+    @classmethod
+    def render_menu_item(cls):
+        print(f"({cls.id}): Create a new account")
+
 class CliSession:
     def __init__(self, session):
         self.session = session
@@ -44,15 +63,16 @@ class CliSession:
 
     def start(self):
         # Print welcome
-        print("CLI Bank application: Session start. Enter Q to exit")
+        print("\nCLI Bank application: Session start. Enter Q to exit")
         while True:
             # Present actions
-            actions = [CreateCustomerAction, ViewTransactionHistoryAction]
+            actions = [CreateCustomerAction, ViewTransactionHistoryAction, CreateAccountAction]
             for action in actions:
                 action.render_menu_item()
             
             # Map input to action requested
-            action_id_requested = Cli.get_action_requested(set({CreateCustomerAction.id, ViewTransactionHistoryAction.id}))
+            options = [action.id for action in actions]
+            action_id_requested = Cli.get_action_requested(set(options))
             action_requested = self.create_action(action_id_requested)
             if action_requested is None:
                 break
@@ -66,6 +86,8 @@ class CliSession:
                 return CreateCustomerAction(self.customer_service)
             case 2:
                 return ViewTransactionHistoryAction(self.customer_service, self.account_service)
+            case 3:
+                return CreateAccountAction(self.customer_service, self.account_service)
             case -1:
                 print("Exiting session")
     
