@@ -55,6 +55,52 @@ class CreateAccountAction:
     def render_menu_item(cls):
         print(f"({cls.id}): Create a new account")
 
+class DepositAction:
+    id = 4
+
+    def __init__(self, customer_service: CustomerService, account_service: AccountService):
+        self.customer_service = customer_service
+        self.account_service = account_service
+
+    def perform(self):
+        customer_id = Cli.get_customer_id_from_input()
+        customer_accounts = self.customer_service.get_accounts_by_customer_id(customer_id)
+        account_id = Cli.choose_account(customer_accounts)
+        deposit_amount = Cli.get_amount_from_input("Deposit amount: ")
+        deposit_successful = self.account_service.deposit(account_id, deposit_amount)
+        if deposit_successful:
+            print(f"Successfully deposited ${deposit_amount}")
+        else:
+            print(f"Failed to deposit ${deposit_amount}. Please try again another time.")
+        
+
+    @classmethod
+    def render_menu_item(cls):
+        print(f"({cls.id}): Make a deposit")
+
+class WithdrawAction:
+    id = 5
+
+    def __init__(self, customer_service: CustomerService, account_service: AccountService):
+        self.customer_service = customer_service
+        self.account_service = account_service
+
+    def perform(self):
+        customer_id = Cli.get_customer_id_from_input()
+        customer_accounts = self.customer_service.get_accounts_by_customer_id(customer_id)
+        account_id = Cli.choose_account(customer_accounts)
+        withdraw_amount = Cli.get_amount_from_input("Withdraw amount: ")
+        withdraw_successful = self.account_service.withdraw(account_id, withdraw_amount)
+        if withdraw_successful:
+            print(f"Successfully withdrawed ${withdraw_amount}")
+        else:
+            print(f"Failed to withdraw ${withdraw_amount}.")
+        
+
+    @classmethod
+    def render_menu_item(cls):
+        print(f"({cls.id}): Withdraw")
+
 class CliSession:
     def __init__(self, session):
         self.session = session
@@ -66,7 +112,7 @@ class CliSession:
         print("\nCLI Bank application: Session start. Enter Q to exit")
         while True:
             # Present actions
-            actions = [CreateCustomerAction, ViewTransactionHistoryAction, CreateAccountAction]
+            actions = [CreateCustomerAction, ViewTransactionHistoryAction, CreateAccountAction, DepositAction, WithdrawAction]
             for action in actions:
                 action.render_menu_item()
             
@@ -88,6 +134,10 @@ class CliSession:
                 return ViewTransactionHistoryAction(self.customer_service, self.account_service)
             case 3:
                 return CreateAccountAction(self.customer_service, self.account_service)
+            case 4:
+                return DepositAction(self.customer_service, self.account_service)
+            case 5:
+                return WithdrawAction(self.customer_service, self.account_service)
             case -1:
                 print("Exiting session")
     

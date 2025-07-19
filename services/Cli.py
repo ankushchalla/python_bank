@@ -75,6 +75,10 @@ def get_account_details_from_input() -> AccountDetails:
         return AccountDetails(initial_balance=0.0)
     return AccountDetails(initial_balance=float(initial_balance_input))
 
+@retry_n_times(2)
+def get_amount_from_input(message: str) -> float:
+    return float(input(message))
+
 
 
 
