@@ -8,7 +8,7 @@ logger = logging.getLogger('CLI')
 CustomerDetails = namedtuple('CustomerDetails', 'first_name last_name address')
 AccountDetails = namedtuple('AccountDetails', 'initial_balance')
         
-def retry_n_times(n: int, message: str = "\nError parsing input, please try again"):
+def retry_n_times(n: int, message: str = "Error parsing input, please try again"):
     def perform(func):
         def wrapper(*args, **kwargs):
             for i in range(n + 1):
@@ -23,7 +23,7 @@ def retry_n_times(n: int, message: str = "\nError parsing input, please try agai
 
 @retry_n_times(2)
 def get_action_requested(options: set[int]) -> int:
-    selected_txt = input("\nChoose menu item by number: ")
+    selected_txt = input("Choose menu item by number or press Q to exit: ")
     if selected_txt == "Q":
         return -1
     selected = int(selected_txt)
@@ -37,16 +37,11 @@ def get_customer_id_from_input() -> int:
 
 @retry_n_times(2)
 def choose_account(accounts: list[Account]) -> int:
-    print(f"\n{len(accounts)} accounts found")
+    print(f"{len(accounts)} accounts found")
     for account in accounts:
         print(account)
 
     return int(input("Enter account_id: "))
-
-def print_transaction_history(transactions: list[Transaction]):
-    print(f"\n{len(transactions)} transactions found")
-    for transaction in transactions:
-        print(transaction)
 
 def get_customer_details_from_input() -> CustomerDetails:
 
@@ -60,7 +55,7 @@ def get_customer_details_from_input() -> CustomerDetails:
     
     @retry_n_times(2)
     def get_address() -> str:
-        return input("Enter address")
+        return input("Enter address: ")
     
     return CustomerDetails(
         first_name = get_first_name(),

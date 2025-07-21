@@ -14,6 +14,10 @@ class CustomerService:
         self.session = session
         self.account_service = AccountService(session)
 
+    def initialize(self, customer_id: int) -> Customer:
+        self.customer = self.get_customer_by_id(customer_id)
+        return self.customer
+
     def create_customer(self, customer_details: CustomerDetails) -> int:
         customer = Customer(
             first_name = customer_details.first_name,
@@ -22,23 +26,16 @@ class CustomerService:
         )
         self.session.add(customer)
         self.session.flush()
+        self.customer = customer
         logger.info(f"CREATE_CUSTOMER_SUCCESS customer_id={customer.customer_id}")
         return customer.customer_id
 
     def add_account(self, customer_id: int, initial_balance: float = 0.0):
-        account = self.account_service.create_account(customer_id, initial_balance)
-        logger.info(f"ADD_ACCOUNT_SUCCESS customer_id={customer_id} account_balance={account.balance}")
+        account = self.account_service.create_account(initial_balance)
+        logger.info(f"ADD_ACCOUNT_SUCCESS customer_id={self.customer.customer_id} account_balance={account.balance}")
 
-    def get_accounts_by_customer_id(self, customer_id: int) -> list[Account]:
-        customer = self.get_customer_by_id(customer_id)
-        return customer.accounts
-    
-    def customer_exists(self, customer_id: int) -> bool:
-        try:
-            customer = self.get_accounts_by_customer_id(customer_id)
-            return True
-        except:
-            return False
+    def get_accounts(self) -> list[Account]:
+        return self.customer.accounts
     
     def get_customer_by_id(self, customer_id: int) -> Customer:
         customer = self.session.get(Customer, customer_id)
@@ -46,4 +43,7 @@ class CustomerService:
             return customer
         else:
             raise Exception(f"CUSTOMER_NOT_FOUND customer_id={customer_id}")
+        
+    def __str__(self) -> str:
+        return f"{self.customer}"
 

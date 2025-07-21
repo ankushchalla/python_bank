@@ -1,6 +1,6 @@
 from sqlalchemy import  insert, create_engine, text, select
 from sqlalchemy.orm import Session
-from persistance.Models import Account
+from persistance.Models import Customer, Account
 from transaction.Transaction import TransactionService
 from typing import List
 from functools import reduce
@@ -13,8 +13,11 @@ class AccountService:
         self.session = session
         self.transaction_service = TransactionService(session)
 
-    def create_account(self, customer_id: int, initial_balance: float = 0.0) -> Account:
-        account = Account(customer_id=customer_id, balance=initial_balance)
+    def initialize(self, customer: Customer):
+        self.customer = customer
+
+    def create_account(self, initial_balance: float = 0.0) -> Account:
+        account = Account(customer_id=self.customer.customer_id, balance=initial_balance)
         self.session.add(account)
         self.session.flush()
         return account
@@ -44,6 +47,7 @@ class AccountService:
     def print_transaction_history(self, account_id: int):
         try:
             account = self.get_account_by_id(account_id)
+            print(f"{len(account.transactions)} transactions found")
             for transaction in account.transactions:
                 print(transaction)
         except Exception as e:

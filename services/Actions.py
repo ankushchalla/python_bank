@@ -5,29 +5,49 @@ from functools import reduce
 import logging
 logger = logging.getLogger('Session')
 
-class CreateCustomerAction:
+class LoginAction:
     id = 1
-    def __init__(self, customer_service: CustomerService):
-        self.customer_service = customer_service
+    customer_is_logged_in = False
 
-    def perform(self):
-        customer_details = Cli.get_customer_details_from_input()
-        generated_id = self.customer_service.create_customer(customer_details)
-        print(f"Your customer_id is {generated_id}. You will need this for future logins")
-
-    @classmethod
-    def render_menu_item(cls):
-        print(f"({cls.id}): Create new customer")
-
-class ViewTransactionHistoryAction:
-    id = 2
     def __init__(self, customer_service: CustomerService, account_service: AccountService):
         self.customer_service = customer_service
         self.account_service = account_service
 
     def perform(self):
         customer_id = Cli.get_customer_id_from_input()
-        customer_accounts = self.customer_service.get_accounts_by_customer_id(customer_id)
+        customer = self.customer_service.initialize(customer_id)
+        self.account_service.initialize(customer)
+        LoginAction.customer_is_logged_in = True
+        print(f"Login successful. Welcome {self.customer_service}\n")
+
+    @classmethod
+    def render_menu_item(cls):
+        print(f"({cls.id}): Login")
+
+class CreateCustomerAction:
+    id = 2
+
+    def __init__(self, customer_service: CustomerService):
+        self.customer_service = customer_service
+
+    def perform(self):
+        customer_details = Cli.get_customer_details_from_input()
+        generated_id = self.customer_service.create_customer(customer_details)
+        print(f"Your customer_id is {generated_id}. You will need this for future logins\n")
+
+    @classmethod
+    def render_menu_item(cls):
+        print(f"({cls.id}): Create new customer")
+
+class ViewTransactionHistoryAction:
+    id = 3
+
+    def __init__(self, customer_service: CustomerService, account_service: AccountService):
+        self.customer_service = customer_service
+        self.account_service = account_service
+
+    def perform(self):
+        customer_accounts = self.customer_service.get_accounts()
         account_id = Cli.choose_account(customer_accounts)
         self.account_service.print_transaction_history(account_id)
 
@@ -36,26 +56,6 @@ class ViewTransactionHistoryAction:
         print(f"({cls.id}): View transaction history")
 
 class CreateAccountAction:
-    id = 3
-    def __init__(self, customer_service: CustomerService, account_service: AccountService):
-        self.customer_service = customer_service
-        self.account_service = account_service
-
-    def perform(self):
-        customer_id = Cli.get_customer_id_from_input()
-        customer_exists = self.customer_service.customer_exists(customer_id)
-        if customer_exists:
-            account_details = Cli.get_account_details_from_input()
-            account = self.account_service.create_account(customer_id, initial_balance=account_details.initial_balance)
-            print(f"Created account: {account}")
-        else:
-            print(f"Could not find customer with customer_id {customer_id}, quitting...")
-
-    @classmethod
-    def render_menu_item(cls):
-        print(f"({cls.id}): Create a new account")
-
-class DepositAction:
     id = 4
 
     def __init__(self, customer_service: CustomerService, account_service: AccountService):
@@ -63,22 +63,15 @@ class DepositAction:
         self.account_service = account_service
 
     def perform(self):
-        customer_id = Cli.get_customer_id_from_input()
-        customer_accounts = self.customer_service.get_accounts_by_customer_id(customer_id)
-        account_id = Cli.choose_account(customer_accounts)
-        deposit_amount = Cli.get_amount_from_input("Deposit amount: ")
-        deposit_successful = self.account_service.deposit(account_id, deposit_amount)
-        if deposit_successful:
-            print(f"Successfully deposited ${deposit_amount}")
-        else:
-            print(f"Failed to deposit ${deposit_amount}. Please try again another time.")
-        
+        account_details = Cli.get_account_details_from_input()
+        account = self.account_service.create_account(initial_balance=account_details.initial_balance)
+        print(f"Created account: {account}\n")
 
     @classmethod
     def render_menu_item(cls):
-        print(f"({cls.id}): Make a deposit")
+        print(f"({cls.id}): Create a new account")
 
-class WithdrawAction:
+class DepositAction:
     id = 5
 
     def __init__(self, customer_service: CustomerService, account_service: AccountService):
@@ -86,15 +79,36 @@ class WithdrawAction:
         self.account_service = account_service
 
     def perform(self):
-        customer_id = Cli.get_customer_id_from_input()
-        customer_accounts = self.customer_service.get_accounts_by_customer_id(customer_id)
+        customer_accounts = self.customer_service.get_accounts()
+        account_id = Cli.choose_account(customer_accounts)
+        deposit_amount = Cli.get_amount_from_input("Deposit amount: ")
+        deposit_successful = self.account_service.deposit(account_id, deposit_amount)
+        if deposit_successful:
+            print(f"Successfully deposited ${deposit_amount}\n")
+        else:
+            print(f"Failed to deposit ${deposit_amount}. Please try again another time.\n")
+        
+
+    @classmethod
+    def render_menu_item(cls):
+        print(f"({cls.id}): Make a deposit")
+
+class WithdrawAction:
+    id = 6
+
+    def __init__(self, customer_service: CustomerService, account_service: AccountService):
+        self.customer_service = customer_service
+        self.account_service = account_service
+
+    def perform(self):
+        customer_accounts = self.customer_service.get_accounts()
         account_id = Cli.choose_account(customer_accounts)
         withdraw_amount = Cli.get_amount_from_input("Withdraw amount: ")
         withdraw_successful = self.account_service.withdraw(account_id, withdraw_amount)
         if withdraw_successful:
-            print(f"Successfully withdrawed ${withdraw_amount}")
+            print(f"Successfully withdrawed ${withdraw_amount}\n")
         else:
-            print(f"Failed to withdraw ${withdraw_amount}.")
+            print(f"Failed to withdraw ${withdraw_amount}.\n")
         
 
     @classmethod
@@ -112,7 +126,10 @@ class CliSession:
         print("\nCLI Bank application: Session start. Enter Q to exit")
         while True:
             # Present actions
-            actions = [CreateCustomerAction, ViewTransactionHistoryAction, CreateAccountAction, DepositAction, WithdrawAction]
+            if not LoginAction.customer_is_logged_in:
+                actions = [LoginAction, CreateCustomerAction]
+            else:
+                actions = [ViewTransactionHistoryAction, CreateAccountAction, DepositAction, WithdrawAction]
             for action in actions:
                 action.render_menu_item()
             
@@ -128,15 +145,17 @@ class CliSession:
 
     def create_action(self, action_id: int):
         match action_id:
-            case 1:
+            case LoginAction.id:
+                return LoginAction(self.customer_service, self.account_service)
+            case CreateCustomerAction.id:
                 return CreateCustomerAction(self.customer_service)
-            case 2:
+            case ViewTransactionHistoryAction.id:
                 return ViewTransactionHistoryAction(self.customer_service, self.account_service)
-            case 3:
+            case CreateAccountAction.id:
                 return CreateAccountAction(self.customer_service, self.account_service)
-            case 4:
+            case DepositAction.id:
                 return DepositAction(self.customer_service, self.account_service)
-            case 5:
+            case WithdrawAction.id:
                 return WithdrawAction(self.customer_service, self.account_service)
             case -1:
                 print("Exiting session")
