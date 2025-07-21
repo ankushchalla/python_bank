@@ -46,9 +46,14 @@ class ViewTransactionHistoryAction:
         self.customer_service = customer_service
         self.account_service = account_service
 
+    @Cli.retry_n_times(2, "Please enter a different account_id")
     def perform(self):
         customer_accounts = self.customer_service.get_accounts()
         account_id = Cli.choose_account(customer_accounts)
+        customer_owns_account = self.customer_service.validate_customer_owns_account(account_id)
+        if not customer_owns_account:
+            raise Exception(f"account with account_id {account_id} not found. Please enter a different account_id")
+        
         self.account_service.print_transaction_history(account_id)
 
     @classmethod
@@ -78,9 +83,14 @@ class DepositAction:
         self.customer_service = customer_service
         self.account_service = account_service
 
+    @Cli.retry_n_times(2, "Please enter a different account_id")
     def perform(self):
         customer_accounts = self.customer_service.get_accounts()
         account_id = Cli.choose_account(customer_accounts)
+        customer_owns_account = self.customer_service.validate_customer_owns_account(account_id)
+        if not customer_owns_account:
+            raise Exception(f"account with account_id {account_id} not found. Please enter a different account_id")
+        
         deposit_amount = Cli.get_amount_from_input("Deposit amount: ")
         deposit_successful = self.account_service.deposit(account_id, deposit_amount)
         if deposit_successful:
@@ -100,9 +110,14 @@ class WithdrawAction:
         self.customer_service = customer_service
         self.account_service = account_service
 
+    @Cli.retry_n_times(2, "Please enter a different account_id")
     def perform(self):
         customer_accounts = self.customer_service.get_accounts()
         account_id = Cli.choose_account(customer_accounts)
+        customer_owns_account = self.customer_service.validate_customer_owns_account(account_id)
+        if not customer_owns_account:
+            raise Exception(f"account with account_id {account_id} not found.")
+        
         withdraw_amount = Cli.get_amount_from_input("Withdraw amount: ")
         withdraw_successful = self.account_service.withdraw(account_id, withdraw_amount)
         if withdraw_successful:

@@ -37,6 +37,10 @@ class CustomerService:
     def get_accounts(self) -> list[Account]:
         return self.customer.accounts
     
+    def validate_customer_owns_account(self, account_id) -> bool:
+        matched_account = [account for account in self.customer.accounts if account.account_id == account_id]
+        return len(matched_account) > 0
+    
     def get_customer_by_id(self, customer_id: int) -> Customer:
         customer = self.session.get(Customer, customer_id)
         if customer is not None:
